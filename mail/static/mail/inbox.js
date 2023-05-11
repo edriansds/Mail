@@ -14,43 +14,47 @@ document.addEventListener('DOMContentLoaded', function() {
   load_mailbox('inbox');
 });
 
-function reply_email() {
-
-}
-
 function view_email(emailID) {
   fetch(`/emails/${emailID}`)
   .then(response => response.json())
   .then(email => {
-    // Print email
-    console.log(email);
 
     // Hide views and show the desired email
     document.querySelector('#emails-view').style.display = 'none';
     document.querySelector('#compose-view').style.display = 'none';
 
-    document.querySelector('#email-view').style.display = 'block';
-    document.querySelector('#email-view').innerHTML = `
-      <p class='mb-1'><b>From: </b>${email.sender}</p>
-      <p class='mb-1'><b>To: </b>${email.recipients}</p>
-      <p class='mb-1'><b>Subject: </b>${email.subject}</p>
-      <p class='mb-1'><b>Timestamp: </b>${email.timestamp}</p>
-      <button id='reply' class='btn btn-sm btn-outline-primary'>Reply</button>
-      <button id='archive' class='btn btn-sm btn-outline-primary'>${email.archived ? 'Unarchive' : 'Archive'}</button>
-      <hr>
-      <p>${email.body}</p>
-    `;
+    document.querySelector('#inbox-view').style.display = 'block';
 
-    document.querySelector('#archive').addEventListener('click', () => {
-      fetch(`/emails/${emailID}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          archived: (email.archived ? false : true)
-        })
-      });
-      load_mailbox('inbox'), 3000;
+    Object.keys(email).forEach(option => {
+      if (option !== "id" && option != "read") {
+        document.querySelector(`#${option}`).innerHTML = email[option];
+      }
     });
+
+    document.querySelector('#archive').innerHTML = email.archived ? 'Archive' : 'Unarchive'
+    document.querySelector('#archive').addEventListener('click', () => archive_email(emailID, email.archived));
+
+    document.querySelector("#reply").addEventListener('click', () => reply_email(email));
   });
+}
+
+function archive_email(emailID, archive) {
+  fetch(`/emails/${emailID}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      archived: archive
+    })
+  });
+  load_mailbox('inbox'), 3000;
+}
+
+function reply_email(email) {
+  compose_email();
+
+  document.querySelector('#compose-recipients').value = email.recipients;
+  document.querySelector('#compose-subject').value = /^Re:/.test(email.subject) ? email.subject : `Re: ${email.subject}`;
+
+  document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: \n`;
 }
 
 function submit_email() {
@@ -76,7 +80,7 @@ function compose_email() {
 
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
-  document.querySelector('#email-view').style.display = 'none';
+  document.querySelector('#inbox-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
 
   // Clear out composition fields
@@ -90,18 +94,18 @@ function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
-  document.querySelector('#email-view').style.display = 'none';
+  document.querySelector('#inbox-view').style.display = 'none';
   
   fetch('/emails/' + mailbox)
   .then(response => response.json())
   .then(emails => {
 
-    console.log(emails)
     document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
     emails.forEach(email => {
       const element = document.createElement('div');
-      element.className = `email border border-dark ${email.read ? 'bg-light' : 'bg-white'}`;
+      element.className = 'email border border-dark';
+      element.classList.add(email.read ? 'bg-light' : 'bg-white')
       element.innerHTML = `
       <ul class='px-1 my-2 d-flex'>
         <li class='d-inline mr-3'><b>${email.sender}</b></li>

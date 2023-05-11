@@ -14,6 +14,17 @@
     <div id="emails-view">
     </div>
 
+    <div id="inbox-view">
+        <b>From: </b><p id='sender'></p>
+        <b>To: </b><p id='recipients'></p>
+        <b>Subject: </b><p id='subject'></p>
+        <b>Timestamp: </b><p id='timestamp'></p>
+        <button id='reply' class='btn btn-sm btn-outline-primary'>Reply</button>
+        <button id='archive' class='btn btn-sm btn-outline-primary'></button>
+        <hr>
+        <p id='body'></p>
+    </div>
+
     <div id="compose-view">
         <h3>New Email</h3>
         <form id="compose-form">
@@ -30,8 +41,6 @@
             <input type="submit" class="btn btn-primary"/>
         </form>
     </div>
-
-    <div id="email-view"></div>
 {% endblock %}
 
 {% block script %}
