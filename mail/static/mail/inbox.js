@@ -19,6 +19,11 @@ function view_email(emailID) {
   .then(response => response.json())
   .then(email => {
 
+    // Set email to readed
+    if (!email.read) {
+      email_readed(email.id);
+    }
+
     // Hide views and show the desired email
     document.querySelector('#emails-view').style.display = 'none';
     document.querySelector('#compose-view').style.display = 'none';
@@ -26,18 +31,29 @@ function view_email(emailID) {
     document.querySelector('#inbox-view').style.display = 'block';
 
     Object.keys(email).forEach(option => {
-      if (option !== "id" && option != "read") {
+      if (option !== "id" && option != "read" && option != "archived") {
         document.querySelector(`#${option}`).innerHTML = email[option];
       }
     });
 
-    document.querySelector('#archive').innerHTML = email.archived ? 'Archive' : 'Unarchive'
-    document.querySelector('#archive').addEventListener('click', () => archive_email(emailID, email.archived));
+    document.querySelector('#archive').textContent = email.archived ? 'Unarchive' : 'Archive'
+    document.querySelector('#archive').addEventListener('click', () => archive_email(emailID, !email.archived));
 
     document.querySelector("#reply").addEventListener('click', () => reply_email(email));
   });
 }
 
+// Set the email status to readed after it is opened
+function email_readed(emailID) {
+  fetch(`/emails/${emailID}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+        read: true
+    })
+  })
+}
+
+// Archive or Unarchive email
 function archive_email(emailID, archive) {
   fetch(`/emails/${emailID}`, {
     method: 'PUT',
@@ -48,13 +64,14 @@ function archive_email(emailID, archive) {
   load_mailbox('inbox'), 3000;
 }
 
+// Fill values in the compose view to reply email
 function reply_email(email) {
   compose_email();
 
-  document.querySelector('#compose-recipients').value = email.recipients;
+  document.querySelector('#compose-recipients').value = email.sender;
   document.querySelector('#compose-subject').value = /^Re:/.test(email.subject) ? email.subject : `Re: ${email.subject}`;
 
-  document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: \n`;
+  document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: ${email.subject}\n`;
 }
 
 function submit_email() {
@@ -90,7 +107,7 @@ function compose_email() {
 }
 
 function load_mailbox(mailbox) {
-  
+
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
